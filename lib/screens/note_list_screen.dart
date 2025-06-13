@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import '../repositories/note_repository.dart';
 import '../services/database.dart' show Note, NoteType;
 import '../services/nlp_service.dart';
-import '../models/note_status.dart';
 import 'add_edit_note_screen.dart';
 import 'dart:convert'; // For JSON decoding
 import 'components/nlp_query_input.dart';
 import 'components/notes_display.dart';
+import 'components/nlp_result_dialog.dart'; // New component for the dialog
 
 class NoteListScreen extends StatefulWidget {
   final NoteRepository noteRepository;
@@ -43,18 +43,12 @@ class _NoteListScreenState extends State<NoteListScreen> {
 
     Navigator.of(context).pop(); // Dismiss loading indicator
 
-    // Show the result
+    // Use the new dialog component
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Here's what I found:"),
-        content: Text(response),
-        actions: [
-          TextButton(
-            child: const Text('OK'),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-        ],
+      builder: (BuildContext dialogContext) => NlpResultDialog(
+        nlpResult: response,
+        noteRepository: _noteRepository,
       ),
     );
     _queryController.clear();

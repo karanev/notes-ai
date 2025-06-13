@@ -2,16 +2,24 @@ import 'package:intl/intl.dart';
 import 'database.dart';
 import '../repositories/note_repository.dart';
 
+// A simple class to hold structured NLP results, especially for lists.
+class NlpResult {
+  final String message;
+  final List<Note> notes; // Relevant notes, if any
+
+  NlpResult({required this.message, this.notes = const []});
+}
+
 class NlpService {
   // The main public method. It's now dependency-injected.
-  Future<String> processQueryWithRepository(
+  Future<NlpResult> processQueryWithRepository(
     String query,
     NoteRepository repository,
   ) async {
     final lowerCaseQuery = query.toLowerCase().trim();
 
     if (lowerCaseQuery.isEmpty) {
-      return "Please ask a question.";
+      return NlpResult(message: "Please ask a question.");
     }
 
     try {
@@ -26,9 +34,9 @@ class NlpService {
         return await _handleListQuery(lowerCaseQuery, repository);
       }
 
-      return "Sorry, I don't understand that. Try questions like 'how many unfinished tasks?' or 'show me my finished notes from today'.";
+      return NlpResult(message: "Sorry, I don't understand that. Try questions like 'how many unfinished tasks?' or 'show me my finished notes from today'.");
     } catch (e) {
-      return "I encountered an error trying to understand that: $e";
+      return NlpResult(message: "I encountered an error trying to understand that: $e");
     }
   }
 
@@ -85,7 +93,7 @@ class NlpService {
   }
 
   /// Handles "how many..." questions.
-  Future<String> _handleCountQuery(
+  Future<NlpResult> _handleCountQuery(
     String query,
     NoteRepository repository,
   ) async {
@@ -113,11 +121,11 @@ class NlpService {
     else if (query.contains('yesterday'))
       timeframe = " from yesterday";
 
-    return "You have $count $subject$timeframe.";
+    return NlpResult(message: "You have $count $subject$timeframe.");
   }
 
   /// Handles "show me..." or "list..." questions.
-  Future<String> _handleListQuery(
+  Future<NlpResult> _handleListQuery(
     String query,
     NoteRepository repository,
   ) async {
@@ -128,13 +136,12 @@ class NlpService {
     final filteredNotes = _filterNotes(query, allNotes);
 
     if (filteredNotes.isEmpty) {
-      return "I couldn't find any notes that match your request.";
+      return NlpResult(message: "I couldn't find any notes that match your request.");
     }
 
-    // 3. Format a nice list.
-    final noteTitles = filteredNotes
-        .map((note) => '- ${note.title}')
-        .join('\n');
-    return "Here are the notes I found (${filteredNotes.length}):\n\n$noteTitles";
+    return NlpResult(
+      message: "Found ${filteredNotes.length} note(s).", // Simplified message
+      notes: filteredNotes, // Return the actual notes
+    );
   }
 }
