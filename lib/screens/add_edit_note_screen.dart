@@ -2,30 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/database.dart' show Note, NoteType; // Import NoteType
 import '../repositories/note_repository.dart';
 import '../models/note_status.dart';
+import '../models/list_item_model.dart'; // Import the new ListItem model
 import 'dart:convert'; // For JSON operations
-
-// Model for list items used within this screen
-class ListItem {
-  String text;
-  bool isCompleted;
-  TextEditingController controller;
-  FocusNode focusNode;
-
-  ListItem({required this.text, this.isCompleted = false})
-      : controller = TextEditingController(text: text),
-        focusNode = FocusNode();
-
-  Map<String, dynamic> toJson() => {'text': text, 'isCompleted': isCompleted};
-
-  factory ListItem.fromJson(Map<String, dynamic> json) => ListItem(
-      text: json['text'] as String,
-      isCompleted: json['isCompleted'] as bool? ?? false);
-
-  void dispose() {
-    controller.dispose();
-    focusNode.dispose();
-  }
-}
 
 class AddEditNoteScreen extends StatefulWidget {
   final Note? note; // Null if we are adding, has a value if we are editing
@@ -49,6 +27,7 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
   late NoteType _currentNoteType;
   List<ListItem> _listItems = [];
   final TextEditingController _newListItemController = TextEditingController();
+  int _nextListItemCreationOrder = 0;
 
   final List<String> _statuses = [
     NoteStatus.todo,
@@ -69,7 +48,8 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
         try {
           final List<dynamic> decodedItems = jsonDecode(widget.note!.content);
           _listItems = decodedItems
-              .map((item) => ListItem.fromJson(item as Map<String, dynamic>))
+              .map((item) => ListItem.fromJson(
+                  item as Map<String, dynamic>, _nextListItemCreationOrder++))
               .toList();
           _contentController = TextEditingController(); // Not used for list type
         } catch (e) {
@@ -147,7 +127,10 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
         // If you want them strictly at the top of uncompleted,
         // you might need to adjust sorting or insert at a specific index.
         // For now, just adding and relying on the sort in build.
-        _listItems.add(ListItem(text: _newListItemController.text.trim()));
+        _listItems.add(ListItem(
+          text: _newListItemController.text.trim(),
+          creationOrder: _nextListItemCreationOrder++,
+        ));
         _newListItemController.clear();
         // Optionally, request focus for the newly added item's text field
         // Future.delayed(Duration(milliseconds: 50), () => FocusScope.of(context).requestFocus(_listItems.last.focusNode));
@@ -256,10 +239,12 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
 
   Widget _buildContentInput() {
     if (_currentNoteType == NoteType.list) {
-      // Sort list items: incomplete first, then completed
+      // Sort list items:
+      // 1. Uncompleted items before completed items.
+      // 2. Within each group (uncompleted/completed), sort by their original creation order.
       _listItems.sort((a, b) {
-        if (a.isCompleted == b.isCompleted) return 0; // Keep original order if same status
-        return a.isCompleted ? 1 : -1; // Incomplete items first
+        if (a.isCompleted != b.isCompleted) return a.isCompleted ? 1 : -1;
+        return a.creationOrder.compareTo(b.creationOrder);
       });
 
 
