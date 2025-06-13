@@ -98,17 +98,17 @@ class NlpService {
 
     // 3. Build a natural language response.
     String subject = "notes";
-    if (query.contains('unfinished') || query.contains('todo'))
+    if (query.contains('unfinished') || query.contains('todo')) {
       subject = "unfinished tasks";
-    else if (query.contains('in progress'))
+    } else if (query.contains('in progress'))
       subject = "tasks in progress";
     else if (query.contains('finished') || query.contains('done'))
       subject = "finished tasks";
 
     String timeframe = "";
-    if (query.contains('today'))
+    if (query.contains('today')) {
       timeframe = " for today";
-    else if (query.contains('last week'))
+    } else if (query.contains('last week'))
       timeframe = " from last week";
     else if (query.contains('yesterday'))
       timeframe = " from yesterday";

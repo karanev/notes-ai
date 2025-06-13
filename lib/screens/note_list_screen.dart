@@ -175,8 +175,8 @@ class _NoteListScreenState extends State<NoteListScreen> {
             ),
           );
         },
-        child: const Icon(Icons.add),
         tooltip: 'Add Note',
+        child: const Icon(Icons.add),
       ),
     );
   }
