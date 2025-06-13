@@ -5,6 +5,8 @@ import '../services/nlp_service.dart';
 import '../models/note_status.dart';
 import 'add_edit_note_screen.dart';
 import 'dart:convert'; // For JSON decoding
+import 'components/nlp_query_input.dart';
+import 'components/notes_display.dart';
 
 class NoteListScreen extends StatefulWidget {
   final NoteRepository noteRepository;
@@ -67,13 +69,13 @@ class _NoteListScreenState extends State<NoteListScreen> {
       body: Column(
         children: [
           // NLP Query Input Area
-          _NlpQueryInput(
+          NlpQueryInput(
             controller: _queryController,
             onAskQuestion: _askQuestion,
           ),
           // List of Notes (Reactive)
           Expanded(
-            child: _NotesDisplay(
+            child: NotesDisplay(
               noteRepository: _noteRepository,
               buildNoteSubtitle: _buildNoteSubtitle,
               onNoteTap: (note) {
@@ -167,99 +169,5 @@ class _NoteListScreenState extends State<NoteListScreen> {
     }
     // Default for text notes
     return Text(note.content, maxLines: 2, overflow: TextOverflow.ellipsis);
-  }
-}
-
-class _NlpQueryInput extends StatelessWidget {
-  final TextEditingController controller;
-  final VoidCallback onAskQuestion;
-
-  const _NlpQueryInput({
-    required this.controller,
-    required this.onAskQuestion,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          labelText: 'Ask me a question...',
-          hintText: 'e.g., how many finished tasks?',
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.send),
-            onPressed: onAskQuestion,
-          ),
-          border: const OutlineInputBorder(),
-        ),
-        onSubmitted: (_) => onAskQuestion(),
-      ),
-    );
-  }
-}
-
-class _NotesDisplay extends StatelessWidget {
-  final NoteRepository noteRepository;
-  final Widget Function(Note) buildNoteSubtitle;
-  final void Function(Note) onNoteTap;
-  final void Function(Note) onNoteLongPress;
-
-  const _NotesDisplay({
-    required this.noteRepository,
-    required this.buildNoteSubtitle,
-    required this.onNoteTap,
-    required this.onNoteLongPress,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return StreamBuilder<List<Note>>(
-      stream: noteRepository.watchAllNotes(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-
-        final notes = snapshot.data ?? [];
-
-        if (notes.isEmpty) {
-          return const Center(
-            child: Text(
-              'No notes yet. Tap the "+" to add one!',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-          );
-        }
-
-        return ListView.builder(
-          itemCount: notes.length,
-          itemBuilder: (context, index) {
-            final note = notes[index];
-            return Card(
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: ListTile(
-                title: Text(note.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: buildNoteSubtitle(note),
-                trailing: Text(
-                  NoteStatus.displayText(note.status),
-                  style: TextStyle(
-                    color: NoteStatus.getColor(note.status),
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                onTap: () => onNoteTap(note),
-                onLongPress: () => onNoteLongPress(note),
-              ),
-            );
-          },
-        );
-      },
-    );
   }
 }
