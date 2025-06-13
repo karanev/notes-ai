@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../repositories/note_repository.dart';
 import '../services/database.dart' show Note, NoteType;
-import '../services/nlp_service.dart';
+import '../services/nlp_service/nlp_service.dart';
+import '../services/nlp_service/nlp_models.dart'; // For NlpResult
 import 'add_edit_note_screen.dart';
 import 'dart:convert'; // For JSON decoding
 import 'components/nlp_query_input.dart';
@@ -59,7 +60,7 @@ class _NoteListScreenState extends State<NoteListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notes AI'),
+        title: const Text('NaraNotes'),
       ),
       body: Column(
         children: [

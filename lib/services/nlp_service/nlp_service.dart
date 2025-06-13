@@ -1,104 +1,71 @@
 import 'package:intl/intl.dart';
-import 'database.dart';
-import '../models/note_status.dart';
-import '../repositories/note_repository.dart';
+import '../database.dart'; // For Note, NoteType
+import '../../models/note_status.dart';
+import '../../repositories/note_repository.dart';
+import './nlp_models.dart';
+import './intent_recognizer.dart';
+import './note_filters.dart';
 
-// A simple class to hold structured NLP results, especially for lists.
-class NlpResult {
-  final String message;
-  final List<Note> notes; // Relevant notes, if any
-
-  NlpResult({required this.message, this.notes = const []});
-}
+// Typedef for intent handler functions
+typedef NlpIntentHandler = Future<NlpResult> Function(
+    String query, NoteRepository repository);
 
 class NlpService {
+  // Map to store intent recognition keywords and their corresponding handlers
+  late final Map<NlpIntent, NlpIntentHandler> _intentHandlers;
+  late final IntentRecognizer _intentRecognizer;
+
+  // List of available note filters for _filterNotes method
+  static final List<NoteFilter> _availableFilters = [
+    StatusNoteFilter(),
+    TimeframeNoteFilter(),
+  ];
+
+  NlpService() : _intentRecognizer = IntentRecognizer() {
+    _intentHandlers = {
+      NlpIntent.countTasks: _handleCountQuery,
+      NlpIntent.listNotes: _handleListQuery,
+      NlpIntent.createNote: _handleCreateNoteQuery,
+    };
+  }
+
+  NlpIntent _recognizeIntent(String lowerCaseQuery) {
+    return _intentRecognizer.recognize(lowerCaseQuery);
+  }
+
   // The main public method. It's now dependency-injected.
   Future<NlpResult> processQueryWithRepository(
     String query,
     NoteRepository repository,
   ) async {
     final lowerCaseQuery = query.toLowerCase().trim();
-
     if (lowerCaseQuery.isEmpty) {
       return NlpResult(message: "Please ask a question.");
     }
 
     try {
-      // Intent: Counting items
-      if (lowerCaseQuery.contains('how many')) {
-        return await _handleCountQuery(lowerCaseQuery, repository);
-      }
-
-      // Intent: Listing items
-      if (lowerCaseQuery.startsWith('show me') ||
-          lowerCaseQuery.startsWith('list')) {
-        return await _handleListQuery(lowerCaseQuery, repository);
-      }
-
-      // Intent: Creating a new note
-      if ((lowerCaseQuery.startsWith('create') || lowerCaseQuery.startsWith('add')) &&
-          lowerCaseQuery.contains('note')) {
-        return await _handleCreateNoteQuery(lowerCaseQuery, repository);
-      }
-
-      return NlpResult(
-          message:
-              "Sorry, I don't understand that. Try 'how many unfinished tasks?', 'show me my notes from today', or 'create a new todo note titled \"My Task\"'.");
+      final intent = _recognizeIntent(lowerCaseQuery);
+      final handler = _intentHandlers[intent];
+      return handler != null
+          ? await handler(lowerCaseQuery, repository)
+          : _handleUnknownIntent();
     } catch (e) {
       return NlpResult(message: "I encountered an error trying to understand that: $e");
     }
   }
 
-  /// Filters a list of notes based on keywords in a query string.
+  /// Filters a list of notes based on active filters derived from the query string.
   List<Note> _filterNotes(String query, List<Note> allNotes) {
-    List<Note> filteredList = List.from(allNotes);
+    final activeFilters =
+        _availableFilters.where((f) => f.isApplicable(query)).toList();
 
-    // --- Filter by Status ---
-    if (query.contains('unfinished') || query.contains(NoteStatus.todo)) {
-      filteredList = filteredList
-          .where((note) => note.status == NoteStatus.todo)
-          .toList();
-    } else if (query.contains(NoteStatus.inProgress.toLowerCase())) {
-      filteredList = filteredList
-          .where((note) => note.status == NoteStatus.inProgress)
-          .toList();
-    } else if (query.contains('finished') || query.contains(NoteStatus.done)) {
-      filteredList = filteredList
-          .where((note) => note.status == NoteStatus.done)
-          .toList();
+    if (activeFilters.isEmpty) {
+      return allNotes; // No specific filters triggered
     }
 
-    // --- Filter by Timeframe ---
-    final now = DateTime.now();
-    if (query.contains('today')) {
-      filteredList = filteredList
-          .where(
-            (note) =>
-                DateFormat('yyyy-MM-dd').format(note.createdAt) ==
-                DateFormat('yyyy-MM-dd').format(now),
-          )
-          .toList();
-    } else if (query.contains('last week')) {
-      final startOfLastWeek = now.subtract(Duration(days: now.weekday + 6));
-      final endOfLastWeek = startOfLastWeek.add(const Duration(days: 6));
-      filteredList = filteredList.where((note) {
-        return note.createdAt.isAfter(
-              startOfLastWeek.subtract(const Duration(days: 1)),
-            ) &&
-            note.createdAt.isBefore(endOfLastWeek.add(const Duration(days: 1)));
-      }).toList();
-    } else if (query.contains('yesterday')) {
-      final yesterday = now.subtract(const Duration(days: 1));
-      filteredList = filteredList
-          .where(
-            (note) =>
-                DateFormat('yyyy-MM-dd').format(note.createdAt) ==
-                DateFormat('yyyy-MM-dd').format(yesterday),
-          )
-          .toList();
-    }
-
-    return filteredList;
+    return allNotes.where((note) {
+      return activeFilters.every((filter) => filter.matches(note, query));
+    }).toList();
   }
 
   /// Handles "how many..." questions.
@@ -205,5 +172,11 @@ class NlpService {
     );
 
     return NlpResult(message: "OK, I've created a ${noteType.name} note titled \"$title\" with status ${NoteStatus.displayText(status)}.");
+  }
+
+  NlpResult _handleUnknownIntent() {
+    return NlpResult(
+        message:
+            "Sorry, I don't understand that. Try 'how many unfinished tasks?', 'show me my notes from today', or 'create a new todo note titled \"My Task\"'.");
   }
 }

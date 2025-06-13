@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/nlp_service.dart';
+import '../../services/nlp_service/nlp_models.dart'; // For NlpResult
 import '../../repositories/note_repository.dart';
 import '../add_edit_note_screen.dart';
 
