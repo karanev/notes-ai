@@ -33,12 +33,20 @@ class NotesDisplay extends StatelessWidget {
 
         if (notes.isEmpty) {
           return const Center(
-            child: Text(
-              'No notes yet. Tap the "+" to add one!',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 18, color: Colors.grey),
-            ),
-          );
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: 16),
+                  Text(
+                    'No notes yet.\nTap the "+" button to add your first note!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ));
         }
 
         return ListView.builder(
@@ -48,7 +56,12 @@ class NotesDisplay extends StatelessWidget {
             return Card(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               child: ListTile(
-                title: Text(note.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                title: Text(
+                  note.title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600, // Slightly bolder
+                      ),
+                ),
                 subtitle: buildNoteSubtitle(note),
                 trailing: Text(
                   NoteStatus.displayText(note.status),

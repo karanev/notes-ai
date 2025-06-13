@@ -233,15 +233,20 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
                   },
                 ),
                 const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  label: const Text('Save'),
+                SizedBox( // Make button full width
+                  width: double.infinity,
+                  child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).primaryColor, // Use primary color for emphasis
+                    foregroundColor: Colors.white, // Text color for primary button
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(6),
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 20),
                   ),
                   onPressed: _saveNote,
+                    child: const Text('Save', style: TextStyle(fontSize: 16)),
+                  ),
                 ),
               ],
             ),
