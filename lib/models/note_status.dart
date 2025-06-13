@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class NoteStatus {
   static const String done = 'done';
-  static const String inProgress = 'inProgress';
+  static const String inProgress = 'in progress';
   static const String todo = 'todo';
 
   static Color getColor(String status) {

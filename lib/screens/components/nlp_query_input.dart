@@ -17,8 +17,8 @@ class NlpQueryInput extends StatelessWidget {
       child: TextField(
         controller: controller,
         decoration: InputDecoration(
-          labelText: 'Ask me a question...',
-          hintText: 'e.g., how many finished tasks?',
+          labelText: 'AI Assistant ',
+          hintText: 'e.g., How many finished tasks?',
           suffixIcon: IconButton(
             icon: const Icon(Icons.send),
             onPressed: onAskQuestion,

@@ -17,14 +17,13 @@ class NlpResultDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     if (nlpResult.notes.isNotEmpty) {
       return AlertDialog(
-        title: const Text("Here's what I found:"),
+        title: Text(nlpResult.message.split('\n\n').first),
         content: SizedBox(
           width: double.maxFinite,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(nlpResult.message.split('\n\n').first),
               const SizedBox(height: 8),
               Flexible(
                 child: ListView.builder(
@@ -33,6 +32,7 @@ class NlpResultDialog extends StatelessWidget {
                   itemBuilder: (BuildContext context, int index) {
                     final note = nlpResult.notes[index];
                     return ListTile(
+                      contentPadding: const EdgeInsets.only(right: 16.0), // Remove only left padding, keep 16.0 right padding
                       title: Text(note.title),
                       onTap: () {
                         Navigator.of(context).pop(); // Close the dialog
@@ -61,7 +61,7 @@ class NlpResultDialog extends StatelessWidget {
       );
     } else {
       return AlertDialog(
-        title: const Text("Message:"),
+        title: const Text("Message"),
         content: Text(nlpResult.message),
         actions: [
           TextButton(child: const Text('OK'), onPressed: () => Navigator.of(context).pop()),
