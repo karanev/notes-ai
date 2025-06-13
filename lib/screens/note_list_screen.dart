@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../repositories/note_repository.dart';
 import '../services/database.dart'; // Needed to instantiate AppDatabase
 import '../services/nlp_service.dart';
+import '../models/note_status.dart';
 import 'add_edit_note_screen.dart';
 
 class NoteListScreen extends StatefulWidget {
@@ -55,7 +56,7 @@ class _NoteListScreenState extends State<NoteListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Smart Notes'),
+        title: const Text('Notes AI'),
       ),
       body: Column(
         children: [
@@ -115,9 +116,9 @@ class _NoteListScreenState extends State<NoteListScreen> {
                           overflow: TextOverflow.ellipsis,
                         ),
                         trailing: Text(
-                          note.status.replaceAll('_', ' ').toUpperCase(),
+                          NoteStatus.displayText(note.status),
                           style: TextStyle(
-                            color: note.status == 'done' ? Colors.green : Colors.orange,
+                            color: NoteStatus.getColor(note.status),
                             fontWeight: FontWeight.bold,
                           ),
                         ),

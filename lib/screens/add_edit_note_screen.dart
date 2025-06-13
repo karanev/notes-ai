@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/database.dart';
 import '../repositories/note_repository.dart';
+import '../models/note_status.dart';
 
 class AddEditNoteScreen extends StatefulWidget {
   final Note? note; // Null if we are adding, has a value if we are editing
@@ -22,7 +23,11 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
   late final TextEditingController _contentController;
   late String _currentStatus;
 
-  final List<String> _statuses = ['todo', 'in_progress', 'done'];
+  final List<String> _statuses = [
+    NoteStatus.todo,
+    NoteStatus.inProgress,
+    NoteStatus.done,
+  ];
   bool get _isEditing => widget.note != null;
 
   @override
@@ -30,7 +35,7 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
     super.initState();
     _titleController = TextEditingController(text: widget.note?.title ?? '');
     _contentController = TextEditingController(text: widget.note?.content ?? '');
-    _currentStatus = widget.note?.status ?? 'todo';
+    _currentStatus = widget.note?.status ?? NoteStatus.todo;
   }
 
   @override
@@ -75,14 +80,6 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEditing ? 'Edit Note' : 'Add Note'),
-        actions: [
-          // Save button
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: _saveNote,
-            tooltip: 'Save Note',
-          ),
-        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -130,7 +127,7 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
                   items: _statuses.map((String status) {
                     return DropdownMenuItem<String>(
                       value: status,
-                      child: Text(status.replaceAll('_', ' ').toUpperCase()),
+                      child: Text(NoteStatus.displayText(status)),
                     );
                   }).toList(),
                   onChanged: (String? newValue) {
@@ -140,6 +137,17 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
                       });
                     }
                   },
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  label: const Text('Save'),
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                  ),
+                  onPressed: _saveNote,
                 ),
               ],
             ),
