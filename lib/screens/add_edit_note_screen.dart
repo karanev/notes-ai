@@ -4,6 +4,7 @@ import '../repositories/note_repository.dart';
 import '../models/note_status.dart';
 import '../models/list_item_model.dart'; // Import the new ListItem model
 import 'dart:convert'; // For JSON operations
+import 'components/add_edit_note/note_content_input_widget.dart'; // New component
 
 class AddEditNoteScreen extends StatefulWidget {
   final Note? note; // Null if we are adding, has a value if we are editing
@@ -195,7 +196,20 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
                   },
                 ),
                 const SizedBox(height: 16),
-                _buildContentInput(), // Dynamic content input based on type
+                // Use the new component
+                NoteContentInputWidget(
+                  currentNoteType: _currentNoteType,
+                  contentController: _contentController,
+                  listItems: _listItems,
+                  newListItemController: _newListItemController,
+                  onAddListItem: _addListItem,
+                  onRemoveListItem: _removeListItem,
+                  onListItemCompletedChanged: (item, newValue) { // Callback for checkbox change
+                    setState(() {
+                      item.isCompleted = newValue ?? false;
+                    });
+                  },
+                ),
                 const SizedBox(height: 24),
                 // Status Dropdown
                 DropdownButtonFormField<String>(
@@ -235,96 +249,6 @@ class _AddEditNoteScreenState extends State<AddEditNoteScreen> {
         ),
       ),
     );
-  }
-
-  Widget _buildContentInput() {
-    if (_currentNoteType == NoteType.list) {
-      // Sort list items:
-      // 1. Uncompleted items before completed items.
-      // 2. Within each group (uncompleted/completed), sort by their original creation order.
-      _listItems.sort((a, b) {
-        if (a.isCompleted != b.isCompleted) return a.isCompleted ? 1 : -1;
-        return a.creationOrder.compareTo(b.creationOrder);
-      });
-
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('List Items:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          if (_listItems.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
-              child: Center(child: Text('No items yet. Add one below!')),
-            ),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(), // To be used inside SingleChildScrollView
-            itemCount: _listItems.length,
-            itemBuilder: (context, index) {
-              final item = _listItems[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(vertical: 4),
-                child: Padding(
-                  padding: const EdgeInsets.only(left:8.0),
-                  child: Row(
-                    children: [
-                      Checkbox(
-                        value: item.isCompleted,
-                        onChanged: (bool? value) {
-                          setState(() {
-                            item.isCompleted = value ?? false;
-                            // Re-sorting will happen on next build implicitly due to setState
-                          });
-                        },
-                      ),
-                      Expanded(
-                        child: TextFormField(
-                          controller: item.controller,
-                          focusNode: item.focusNode,
-                          decoration: InputDecoration(
-                            hintText: 'List item ${index + 1}',
-                            border: InputBorder.none,
-                          ),
-                          style: TextStyle(
-                            decoration: item.isCompleted ? TextDecoration.lineThrough : TextDecoration.none,
-                          ),
-                          onChanged: (text) => item.text = text, // Keep item.text in sync
-                          textCapitalization: TextCapitalization.sentences,
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                        onPressed: () => _removeListItem(index),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _newListItemController,
-            decoration: InputDecoration(
-              labelText: 'Add new item',
-              suffixIcon: IconButton(icon: const Icon(Icons.add), onPressed: _addListItem),
-              border: const OutlineInputBorder(),
-            ),
-            onSubmitted: (_) => _addListItem(),
-          ),
-        ],
-      );
-    } else {
-      // Text Note
-      return TextFormField(
-        controller: _contentController,
-        decoration: const InputDecoration(labelText: 'Content', border: OutlineInputBorder(), alignLabelWithHint: true),
-        maxLines: 8,
-        textCapitalization: TextCapitalization.sentences,
-      );
-    }
   }
 }
 
