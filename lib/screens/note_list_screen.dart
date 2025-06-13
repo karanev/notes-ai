@@ -7,6 +7,7 @@ import 'dart:convert'; // For JSON decoding
 import 'components/nlp_query_input.dart';
 import 'components/notes_display.dart';
 import 'components/nlp_result_dialog.dart'; // New component for the dialog
+import 'components/delete_confirmation_dialog.dart'; // New component for delete confirmation
 
 class NoteListScreen extends StatefulWidget {
   final NoteRepository noteRepository;
@@ -85,23 +86,12 @@ class _NoteListScreenState extends State<NoteListScreen> {
               onNoteLongPress: (note) {
                 showDialog(
                   context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Delete Note?'),
-                    content: Text('Are you sure you want to delete "${note.title}"?'),
-                    actions: [
-                      TextButton(
-                        child: const Text('Cancel'),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                      TextButton(
-                        child: const Text('Delete', style: TextStyle(color: Colors.red)),
-                        onPressed: () {
-                          _noteRepository.deleteNote(note.id);
-                          Navigator.of(context).pop();
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Note deleted")));
-                        },
-                      ),
-                    ],
+                  builder: (BuildContext dialogContext) => DeleteConfirmationDialog(
+                    noteTitle: note.title,
+                    onConfirmDelete: () {
+                      _noteRepository.deleteNote(note.id);
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Note deleted")));
+                    },
                   ),
                 );
               },

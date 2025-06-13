@@ -61,7 +61,7 @@ class NlpResultDialog extends StatelessWidget {
       );
     } else {
       return AlertDialog(
-        title: const Text("NLP Response:"),
+        title: const Text("Message:"),
         content: Text(nlpResult.message),
         actions: [
           TextButton(child: const Text('OK'), onPressed: () => Navigator.of(context).pop()),
