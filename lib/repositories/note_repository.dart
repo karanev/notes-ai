@@ -2,7 +2,7 @@
 
 import '../services/database.dart'; // We need AppDatabase and the generated Note class
 import 'package:drift/drift.dart'
-    as drift; // Use a prefix to avoid name clashes
+    as drift; 
 
 class NoteRepository {
   // The repository has a dependency on the database
@@ -27,12 +27,14 @@ class NoteRepository {
     required String title,
     required String content,
     required String status,
+    required NoteType noteType,
   }) async {
     final newNote = NotesCompanion(
       title: drift.Value(title),
       content: drift.Value(content),
       status: drift.Value(status),
       createdAt: drift.Value(DateTime.now()),
+      noteType: drift.Value(noteType),
     );
     await _database.insertNote(newNote);
   }
@@ -40,6 +42,8 @@ class NoteRepository {
   // Updates an existing note.
   Future<void> updateNote(Note note) async {
     // The 'note' object from the UI is a drift 'Note' data class.
+    // It will now include 'noteType'.
+    // The content string will be plain text or a JSON string for lists.
     // We convert it to a 'NotesCompanion' for the update operation.
     final companion = note.toCompanion(true);
     await _database.updateNote(companion);

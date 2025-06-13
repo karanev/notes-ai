@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import '../repositories/note_repository.dart';
-import '../services/database.dart'; // Needed to instantiate AppDatabase
+import '../services/database.dart' show AppDatabase, Note, NoteType; // Import NoteType
 import '../services/nlp_service.dart';
 import '../models/note_status.dart';
 import 'add_edit_note_screen.dart';
+import 'dart:convert'; // For JSON decoding
 
 class NoteListScreen extends StatefulWidget {
   const NoteListScreen({Key? key}) : super(key: key);
@@ -110,11 +111,7 @@ class _NoteListScreenState extends State<NoteListScreen> {
                       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       child: ListTile(
                         title: Text(note.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text(
-                          note.content,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        subtitle: _buildNoteSubtitle(note),
                         trailing: Text(
                           NoteStatus.displayText(note.status),
                           style: TextStyle(
@@ -179,5 +176,46 @@ class _NoteListScreenState extends State<NoteListScreen> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Widget _buildNoteSubtitle(Note note) {
+    if (note.noteType == NoteType.list) {
+      try {
+        final List<dynamic> decodedItemsJson = jsonDecode(note.content);
+        List<Map<String, dynamic>> items = decodedItemsJson.map((item) {
+          return {'text': item['text'] as String, 'isCompleted': item['isCompleted'] as bool? ?? false};
+        }).toList();
+
+        // Sort items: incomplete first, then completed
+        items.sort((a, b) {
+          if (a['isCompleted'] == b['isCompleted']) return 0;
+          return (a['isCompleted'] as bool) ? 1 : -1;
+        });
+
+        if (items.isEmpty) {
+          return const Text('[Empty list]', style: TextStyle(fontStyle: FontStyle.italic));
+        }
+
+        int completedCount = items.where((item) => item['isCompleted'] == true).length;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('List ($completedCount/${items.length} completed):', style: const TextStyle(fontSize: 12, color: Colors.blueGrey)),
+            ...items.take(3).map((item) => Text(
+                  '- ${item['text']}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(decoration: item['isCompleted'] == true ? TextDecoration.lineThrough : null),
+                )),
+            if (items.length > 3) const Text('...', style: TextStyle(fontStyle: FontStyle.italic)),
+          ],
+        );
+      } catch (e) {
+        return const Text('[Error displaying list content]', style: TextStyle(color: Colors.red, fontStyle: FontStyle.italic));
+      }
+    }
+    // Default for text notes
+    return Text(note.content, maxLines: 2, overflow: TextOverflow.ellipsis);
   }
 }
